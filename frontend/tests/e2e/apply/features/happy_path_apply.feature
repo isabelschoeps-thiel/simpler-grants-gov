@@ -9,61 +9,68 @@ Feature: Happy Path – Apply Workflow
 
   @Happy-Path
   Scenario: Complete the full Apply workflow successfully
+
     # --- Login ---
-    Launch the URL
-    The user enters valid login credentials
+    Given the user launches the URL
+    When the user enters valid login credentials
     And the user logs in
-    User goes to the search page
-    Searches for the specific Funding Opportunity number
+    Then the user goes to the search page
+    When the user searches for the specific Funding Opportunity number
     Then the user is taken to the Funding Opportunities page
 
     # --- Starting Application ---
-    The user clicks "Start Application"
-    Start a new application modal opens
-    User selects specific option in the 'Who's applying' drop down
-    Enters the name of the application
-    Then clicks on 'Create Application' button
-    A new workspace is created
+    When the user clicks "Start Application"
+    Then the "Start a new application" modal opens
+    When the user selects a specific option in the "Who's applying" drop down
+    And enters the name of the application
+    And clicks on "Create Application" button
+    Then a new workspace is created
     And the Apply page loads with navigation and header
 
     # --- Completing Required and Optional Forms ---
-    Under 'Required forms' there is one specific form (SF-424)
-    The user completes all required fields in the SF-424 form and clicks on 'Save'
-    Then the system saves the SF-424
-    Under 'Conditionally required form' there can be any number of forms
-    The user completes all required fields in one of the optional form and clicks on 'Save'
-    User selects 'Yes' for the one optional form filled and remaining forms have 'No' selected
-    The system saves the optional form
+    Given there is one specific required form "SF-424"
+    When the user completes all required fields in the SF-424 form
+    And clicks on "Save"
+    Then the system saves the SF-424 form
+
+    Given there are conditionally required forms
+    When the user completes all required fields in one of the optional forms
+    And clicks on "Save"
+    And selects "Yes" for the optional form filled
+    And ensures remaining optional forms have "No" selected
+    Then the system saves the optional form
     And the user is taken to the next required form or step
 
     # --- Save Behavior ---
     When the user clicks "Save" in the form
-    And no validation errors should appear
+    Then no validation errors should appear
 
     # --- Uploading Documents ---
-    The user uploads all required documents
-    Under 'Attachment' header the user uploads a file
-    And each file meets size and format requirements
-    Then the documents are successfully attached to the application
-    The uploaded file is listed in the 'Attached doocument' table
+    When the user uploads all required documents under the "Attachment" header
+    Then each file meets size and format requirements
+    And the documents are successfully attached to the application
+    And the uploaded files are listed in the "Attached document" table
 
     # --- Complete All Required Forms ---
-    When the user completes all the required forms
-    And all validations pass
-   
+    When the user completes all required forms
+    Then all validations pass
+
     # --- Review Application ---
-    The user navigates to the Application page
-    All sections now display "No issues detected" where applicable
+    When the user navigates to the Application page
+    Then all sections display "No issues detected" where applicable
 
     # --- Submitting the Application ---
-    The user clicks "Submit application"
+    When the user clicks "Submit application" with incomplete or invalid fields
+    Then the system displays validation errors for the incomplete or invalid fields
+    When the user fills all required fields and resolves all errors
+    And the user clicks "Submit application"
     Then the system submits the application successfully
 
     # --- Confirmation Page ---
     Then the user is taken to the submission confirmation page
-    User currently sees a confirmation message
+    And the user sees a confirmation message
 
-    # ---Below are for future development----
-    And the user sees a confirmation number
+    # --- Future development ---
+    Then the user sees a confirmation number
     And the system displays the submission timestamp
     And a submission notification email is triggered
