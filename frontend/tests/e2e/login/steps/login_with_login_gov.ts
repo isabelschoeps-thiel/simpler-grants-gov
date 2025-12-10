@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { Given, setDefaultTimeout } from '@cucumber/cucumber';
+import { Given, setDefaultTimeout, AfterAll } from '@cucumber/cucumber';
 import { chromium, Browser, BrowserContext, Page } from 'playwright';
 import { authenticator } from 'otplib';
 import * as dotenv from 'dotenv';
@@ -80,4 +80,11 @@ Given('the user is logged in', async function () {
   this.page = page;
   this.context = context;
   this.browser = browser;
+});
+
+// --- Hook to close browser after all scenarios ---
+AfterAll(async () => {
+  if (page) await page.close();
+  if (context) await context.close();
+  if (browser) await browser.close();
 });
