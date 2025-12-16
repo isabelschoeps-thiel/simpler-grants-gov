@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 import { Given, setDefaultTimeout, AfterAll } from '@cucumber/cucumber';
+import { CustomWorld } from "./world";
 import { chromium, Browser, BrowserContext, Page } from 'playwright';
 import { authenticator } from 'otplib';
 import * as dotenv from 'dotenv';
@@ -24,7 +25,7 @@ let browser: Browser;
 let context: BrowserContext;
 let page: Page;
 
-Given('I navigate to the Simpler Grants staging site', async function () {
+Given('I navigate to the Simpler Grants staging site', async function (this: CustomWorld) {
   const baseUrl = process.env.STAGING_BASE_URL;
   if (!baseUrl) throw new Error('STAGING_BASE_URL not defined in .env.local');
 
@@ -44,7 +45,7 @@ Given('I navigate to the Simpler Grants staging site', async function () {
   this.browser = browser;
 });
 
-Given('the user is logged in', async function () {
+Given('the user is logged in', async function (this: CustomWorld) {
   const email = process.env.LOGIN_EMAIL;
   const password = process.env.LOGIN_PASSWORD;
   const mfaKey = process.env.LOGIN_MFA_KEY;

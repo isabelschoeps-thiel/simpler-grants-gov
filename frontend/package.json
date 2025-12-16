@@ -21,6 +21,7 @@
     "storybook": "storybook dev -p 6006",
     "storybook-build": "storybook build",
     "test": "jest --ci --coverage",
+    "test:cucumber": "cucumber-js --require-module ts-node/register --require tests/e2e/login/steps/**/*.ts tests/e2e/login/features/**/*.feature",
     "test:pa11y-desktop": "pa11y-ci --config .pa11yci-desktop.json --sitemap http://localhost:3000/sitemap.xml",
     "test:pa11y-mobile": "pa11y-ci --config .pa11yci-mobile.json --sitemap http://localhost:3000/sitemap.xml",
     "test-update": "jest --update-snapshot",
@@ -56,6 +57,7 @@
     "next": "^15.4.7",
     "next-intl": "^3.2.1",
     "next-navigation-guard": "^0.2.0",
+    "otplib": "^12.0.1",
     "pino": "^9.6.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -65,6 +67,7 @@
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^1.9.0",
+    "@cucumber/cucumber": "^10.9.0",
     "@ianvs/prettier-plugin-sort-imports": "^4.0.2",
     "@playwright/test": "^1.44.0",
     "@storybook/addon-essentials": "^8.5.2",
@@ -111,6 +114,7 @@
     "sass-loader": "^13.2.0",
     "storybook": "^8.5.2",
     "style-loader": "^3.3.2",
+    "ts-node": "^10.9.2",
     "typescript": "^5.0.0"
   }
 }
