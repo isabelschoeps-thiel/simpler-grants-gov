@@ -19,8 +19,6 @@ Before executing Apply workflow tests, the following must be satisfied:
 ### 3.1. In Scope
 
 This Test Plan covers functional and non-functional aspects of the Apply Workflow:
-• User login and role verification
-• Funding Opportunity search and selection
 • Start a new application for Organization and Individual users
 • Save and update application data
 • Required and conditionally required form validations
@@ -30,6 +28,8 @@ This Test Plan covers functional and non-functional aspects of the Apply Workflo
 • Review application
 • Submission flow and confirmation page
 • End-to-end workflows in a real environment
+• Mobile browser checks
+
 
 ### 3.2. Out of Scope
 
@@ -39,11 +39,9 @@ This Test Plan covers functional and non-functional aspects of the Apply Workflo
 • Email notifications
 • Upload file size validations, format validations and virus checks
 • i18n translations, accessibility, or API validation
-• Mobile browser checks
 
 ## 4. Test Objectives
 
-• Validate that users can login and access Search Funding Opportunity page.
 • Confirm users can complete the Apply workflow end-to-end for Organization and Individual users.
 • Ensure all required and conditionally required validations work correctly.
 • Verify optional form selection works as expected.
@@ -55,21 +53,10 @@ This Test Plan covers functional and non-functional aspects of the Apply Workflo
 
 Testing is divided into the following levels:
 
-### 5.1. BDD (Gherkin) Feature Tests
-
-• Feature files define user-visible workflows:
-o Organization user: complete required/conditionally required forms, optional form selection, attachments, submission confirmation
-o Individual user: same workflow without organization selection
-• Does not cover i18n, accessibility, or API validation
-• Location:
-o frontend/tests/e2e/apply/features/happy_path_apply.feature
-o frontend/tests/e2e/apply/negativecases_apply.feature
-o frontend/tests/e2e/apply/edgecases_apply.feature
-
-### 5.2. End-to-End Tests (Playwright)
+### 5.1. End-to-End Tests (Playwright)
 
 • Validates full user experience: Start → Fill → Upload → Review → Submit
-• Includes autosave, negative/edge case handling, network errors, browser compatibility checks
+• Includes negative/edge case handling, network errors, browser compatibility checks
 • Location:
 o frontend/tests/e2e/apply/happypath.specs.ts
 o frontend/tests/e2e/apply/negativecases.specs.ts
