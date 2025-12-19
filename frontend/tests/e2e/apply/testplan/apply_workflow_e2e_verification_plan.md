@@ -30,7 +30,6 @@ This Test Plan covers functional and non-functional aspects of the Apply Workflo
 • End-to-end workflows in a real environment
 • Mobile browser checks
 
-
 ### 3.2. Out of Scope
 
 • Post-submission editing
