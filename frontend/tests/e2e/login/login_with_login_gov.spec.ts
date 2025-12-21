@@ -73,12 +73,10 @@ test("Login.gov authentication with MFA", async ({ page }) => {
       .info()
       .outputPath("step1-debug-no-signin.png");
     await page.screenshot({ path: debugNoSignInPath, fullPage: true });
-    await test
-      .info()
-      .attach("step1-debug-no-signin", {
-        path: debugNoSignInPath,
-        contentType: "image/png",
-      });
+    await test.info().attach("step1-debug-no-signin", {
+      path: debugNoSignInPath,
+      contentType: "image/png",
+    });
     throw new Error("Could not find Sign In button or link");
   }
 
@@ -87,12 +85,10 @@ test("Login.gov authentication with MFA", async ({ page }) => {
   await page.waitForLoadState("networkidle");
   const step2Path = test.info().outputPath("step2-after-signin-click.png");
   await page.screenshot({ path: step2Path, fullPage: true });
-  await test
-    .info()
-    .attach("step2-after-signin-click", {
-      path: step2Path,
-      contentType: "image/png",
-    });
+  await test.info().attach("step2-after-signin-click", {
+    path: step2Path,
+    contentType: "image/png",
+  });
 
   // Fill login form
   await page.fill('input[name="user[email]"]', loginEmail);
@@ -124,10 +120,8 @@ test("Login.gov authentication with MFA", async ({ page }) => {
   await page.waitForURL(baseUrl, { timeout: 15000 });
   const step4Path = test.info().outputPath("step4-login-success.png");
   await page.screenshot({ path: step4Path, fullPage: true });
-  await test
-    .info()
-    .attach("step4-login-success", {
-      path: step4Path,
-      contentType: "image/png",
-    });
+  await test.info().attach("step4-login-success", {
+    path: step4Path,
+    contentType: "image/png",
+  });
 });
