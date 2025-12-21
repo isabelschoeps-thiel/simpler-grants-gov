@@ -25,6 +25,12 @@ jobs:
   e2e-tests:
     name: Run E2E Tests
     runs-on: ubuntu-22.04
+    env:
+      TEST_ENVIRONMENT: staging
+      STAGING_BASE_URL: ${{ secrets.STAGING_BASE_URL }}
+      LOWERENV_TEST_USER_EMAIL: ${{ secrets.LOWERENV_TEST_USER_EMAIL }}
+      LOWERENV_TEST_USER_PASSWORD: ${{ secrets.LOWERENV_TEST_USER_PASSWORD }}
+      LOWERENV_TEST_USER_MFA_KEY: ${{ secrets.LOWERENV_TEST_USER_MFA_KEY }}
 
     strategy:
       fail-fast: true
