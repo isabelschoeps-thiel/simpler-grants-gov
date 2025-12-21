@@ -1,6 +1,5 @@
 import { GoogleAnalytics } from "@next/third-parties/google";
 import * as newrelic from "newrelic";
-import Head from "next/head";
 /**
  * Root layout component, wraps all pages.
  * @see https://nextjs.org/docs/app/api-reference/file-conventions/layout
@@ -8,6 +7,7 @@ import Head from "next/head";
 import { environment } from "src/constants/environments";
 import { NewRelicWithCorrectTypes } from "src/types/newRelic";
 
+import Head from "next/head";
 import Script from "next/script";
 
 import "src/styles/styles.scss";

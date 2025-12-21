@@ -1,9 +1,10 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { createRef } from "react";
-
 import { fakeUserOrganization } from "src/utils/testing/fixtures";
 import { useTranslationsMock } from "src/utils/testing/intlMocks";
+
+import { createRef } from "react";
+
 import { StartApplicationModal } from "src/components/workspace/StartApplicationModal/StartApplicationModal";
 
 const mockRouterPush = jest.fn();
@@ -44,7 +45,7 @@ describe("StartApplicationModal", () => {
         organizations={[fakeUserOrganization]}
         token="a token"
         loading={false}
-      />
+      />,
     );
 
     expect(container).toMatchSnapshot();
@@ -60,14 +61,14 @@ describe("StartApplicationModal", () => {
         organizations={[]}
         token="a token"
         loading={false}
-      />
+      />,
     );
 
     const saveButton = await screen.findByTestId("application-start-save");
     await userEvent.click(saveButton);
 
     expect(
-      await screen.findByText("fields.name.validationError")
+      await screen.findByText("fields.name.validationError"),
     ).toBeInTheDocument();
   });
 
@@ -81,7 +82,7 @@ describe("StartApplicationModal", () => {
         organizations={[fakeUserOrganization]}
         token="a token"
         loading={false}
-      />
+      />,
     );
 
     const nameInput = await screen.findByTestId("textInput");
@@ -91,9 +92,7 @@ describe("StartApplicationModal", () => {
     await userEvent.click(saveButton);
 
     expect(
-      await screen.findByText(
-        "fields.organizationSelect.validationError"
-      )
+      await screen.findByText("fields.organizationSelect.validationError"),
     ).toBeInTheDocument();
   });
 
@@ -109,7 +108,7 @@ describe("StartApplicationModal", () => {
         organizations={[]}
         token="a token"
         loading={false}
-      />
+      />,
     );
 
     const input = await screen.findByTestId("textInput");
@@ -134,7 +133,7 @@ describe("StartApplicationModal", () => {
         organizations={[]}
         token="a token"
         loading={false}
-      />
+      />,
     );
 
     const input = await screen.findByTestId("textInput");
@@ -143,9 +142,7 @@ describe("StartApplicationModal", () => {
     await userEvent.type(input, "new application");
     await userEvent.click(saveButton);
 
-    expect(
-      await screen.findByText("loggedOut")
-    ).toBeInTheDocument();
+    expect(await screen.findByText("loggedOut")).toBeInTheDocument();
   });
 
   it("re-routes on successful save", async () => {
@@ -160,7 +157,7 @@ describe("StartApplicationModal", () => {
         organizations={[fakeUserOrganization]}
         token="a token"
         loading={false}
-      />
+      />,
     );
 
     const input = await screen.findByTestId("textInput");
@@ -168,27 +165,21 @@ describe("StartApplicationModal", () => {
     const saveButton = await screen.findByTestId("application-start-save");
 
     await userEvent.type(input, "new application");
-    await userEvent.selectOptions(
-      select,
-      fakeUserOrganization.organization_id
-    );
+    await userEvent.selectOptions(select, fakeUserOrganization.organization_id);
     await userEvent.click(saveButton);
 
-    expect(clientFetchMock).toHaveBeenCalledWith(
-      "/api/applications/start",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          applicationName: "new application",
-          competitionId: "1",
-          organization: fakeUserOrganization.organization_id,
-        }),
-      }
-    );
+    expect(clientFetchMock).toHaveBeenCalledWith("/api/applications/start", {
+      method: "POST",
+      body: JSON.stringify({
+        applicationName: "new application",
+        competitionId: "1",
+        organization: fakeUserOrganization.organization_id,
+      }),
+    });
 
     await waitFor(() => {
       expect(mockRouterPush).toHaveBeenCalledWith(
-        "/workspace/applications/application/999"
+        "/workspace/applications/application/999",
       );
     });
   });
@@ -203,12 +194,10 @@ describe("StartApplicationModal", () => {
         organizations={[]}
         token="a token"
         loading={false}
-      />
+      />,
     );
 
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
-    expect(
-      screen.getByText("ineligibleTitle")
-    ).toBeInTheDocument();
+    expect(screen.getByText("ineligibleTitle")).toBeInTheDocument();
   });
 });

@@ -3,9 +3,8 @@
 
 import { useFormState } from "react-dom";
 
-export function useActionState<State, Payload = FormData>(
-  action: (state: State, payload: Payload) => State | Promise<State>,
-  initialState: State,
-) {
-  return useFormState<State, Payload>(action, initialState);
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument */
+export function useActionState(action: any, initialState: any): any {
+  return useFormState(action, initialState);
 }
+/* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument */
