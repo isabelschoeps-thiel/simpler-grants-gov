@@ -19,13 +19,23 @@ const email = process.env[`${credentialPrefix}_TEST_USER_EMAIL`];
 const password = process.env[`${credentialPrefix}_TEST_USER_PASSWORD`];
 const authKey = process.env[`${credentialPrefix}_TEST_USER_MFA_KEY`];
 
-if (!email) throw new Error(`${credentialPrefix}_TEST_USER_EMAIL is not defined`);
-if (!password) throw new Error(`${credentialPrefix}_TEST_USER_PASSWORD is not defined`);
-if (!authKey) throw new Error(`${credentialPrefix}_TEST_USER_MFA_KEY is not defined`);
-
 // Get base URL based on environment
-const baseUrl = process.env[`${testEnv.toUpperCase()}_BASE_URL`];
-if (!baseUrl) throw new Error(`${testEnv.toUpperCase()}_BASE_URL is not defined in .env.local`);
+const baseUrlEnv = process.env[`${testEnv.toUpperCase()}_BASE_URL`];
+
+// If secrets or base URL are missing, skip the spec to avoid failing CI on PRs without secrets
+const envMissing = !email || !password || !authKey || !baseUrlEnv;
+test.skip(envMissing, 'Login E2E env not configured; skipping spec');
+
+// Narrow types after skip to satisfy TypeScript
+const requireEnv = (value: string | undefined, name: string) => {
+  if (!value) throw new Error(`${name} is not defined`);
+  return value;
+};
+
+const loginEmail = requireEnv(email, `${credentialPrefix}_TEST_USER_EMAIL`);
+const loginPassword = requireEnv(password, `${credentialPrefix}_TEST_USER_PASSWORD`);
+const loginAuthKey = requireEnv(authKey, `${credentialPrefix}_TEST_USER_MFA_KEY`);
+const baseUrl = requireEnv(baseUrlEnv, `${testEnv.toUpperCase()}_BASE_URL`);
 
 test('Login.gov authentication with MFA', async ({ page }) => {
   // Navigate to staging site
@@ -61,8 +71,8 @@ test('Login.gov authentication with MFA', async ({ page }) => {
   await test.info().attach('step2-after-signin-click', { path: step2Path, contentType: 'image/png' });
 
   // Fill login form
-  await page.fill('input[name="user[email]"]', email);
-  await page.fill('input[name="user[password]"]', password);
+  await page.fill('input[name="user[email]"]', loginEmail);
+  await page.fill('input[name="user[password]"]', loginPassword);
   const submitButton = page.locator('button[type="submit"]').first();
   await submitButton.click();
 
@@ -73,7 +83,7 @@ test('Login.gov authentication with MFA', async ({ page }) => {
   await test.info().attach('step3-mfa-prompt', { path: step3Path, contentType: 'image/png' });
 
   // Generate MFA code and submit
-  const oneTimeCode = authenticator.generate(authKey);
+  const oneTimeCode = authenticator.generate(loginAuthKey);
   await page.fill('input[autocomplete="one-time-code"]', oneTimeCode);
   // Find and click the submit button (not cancel) - look for button with "submit" or "verify" text
   const mfaSubmitButton = page.locator('button[type="submit"]:not(:has-text("Cancel"))').first();

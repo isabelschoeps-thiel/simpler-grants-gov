@@ -121,6 +121,46 @@ jobs:
           path: /home/runner/work/simpler-grants-gov/simpler-grants-gov/frontend/blob-report
           retention-days: 1
 
+  e2e-login-staging:
+    name: Login E2E (Staging)
+    runs-on: ubuntu-22.04
+    env:
+      TEST_ENVIRONMENT: staging
+      STAGING_BASE_URL: ${{ secrets.STAGING_BASE_URL }}
+      LOWERENV_TEST_USER_EMAIL: ${{ secrets.LOWERENV_TEST_USER_EMAIL }}
+      LOWERENV_TEST_USER_PASSWORD: ${{ secrets.LOWERENV_TEST_USER_PASSWORD }}
+      LOWERENV_TEST_USER_MFA_KEY: ${{ secrets.LOWERENV_TEST_USER_MFA_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: ${{ env.PACKAGE_MANAGER }}
+          cache-dependency-path: ${{ env.LOCKFILE_PATH }}
+
+      - name: Install dependencies and Playwright
+        run: |
+          npm ci
+          npx playwright install --with-deps
+
+      - name: Run staging login spec
+        env:
+          CI: true
+          PLAYWRIGHT_BASE_URL: ${{ secrets.STAGING_BASE_URL }}
+        run: |
+          npx playwright test frontend/tests/e2e/login/login_with_login_gov.spec.ts --config ./tests/playwright.config.ts
+
+      - name: Upload Blob Report (login)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: blob-report-login
+          path: /home/runner/work/simpler-grants-gov/simpler-grants-gov/frontend/blob-report
+          retention-days: 7
+
   create-report:
     name: Create Merged Test Report
     if: ${{ !cancelled() }}
