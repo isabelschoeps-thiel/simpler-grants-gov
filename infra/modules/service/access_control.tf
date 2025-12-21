@@ -79,6 +79,17 @@ data "aws_iam_policy_document" "task_executor" {
     resources = [local.fluent_bit_repo_arn]
   }
 
+  # Allow ECS to download images for GuardDuty agent
+  statement {
+    sid = "ECRPullAccessGuardDuty"
+    actions = [
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:BatchGetImage",
+      "ecr:GetDownloadUrlForLayer",
+    ]
+    resources = ["arn:aws:ecr:us-east-1:593207742271:repository/aws-guardduty-agent-fargate"]
+  }
+
   statement {
     sid = "PullSharedNewRelicKey"
     actions = [
@@ -203,6 +214,13 @@ resource "aws_iam_role_policy_attachment" "email_access" {
   count = length(var.pinpoint_app_id) > 0 ? 1 : 0
 
   role       = aws_iam_role.app_service.name
+  policy_arn = aws_iam_policy.email_access[0].arn
+}
+
+resource "aws_iam_role_policy_attachment" "migrator_email_access" {
+  count = length(var.pinpoint_app_id) > 0 && var.db_vars != null ? 1 : 0
+
+  role       = aws_iam_role.migrator_task[0].name
   policy_arn = aws_iam_policy.email_access[0].arn
 }
 

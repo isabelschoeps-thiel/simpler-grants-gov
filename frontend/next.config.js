@@ -178,6 +178,7 @@ const nextConfig = {
   },
   experimental: {
     testProxy: true,
+    middlewareClientMaxBodySize: "2000mb",
     serverActions: {
       bodySizeLimit: "2000mb",
     },
