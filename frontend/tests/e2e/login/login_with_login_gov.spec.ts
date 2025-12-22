@@ -1,109 +1,193 @@
-import { test } from '@playwright/test';
-import type { Page } from '@playwright/test';
-import { authenticator } from 'otplib';
+import {
+  test,
+  type BrowserContext,
+  type Locator,
+  type Page,
+} from "@playwright/test";
+import { authenticator } from "otplib";
 
-// Validate and retrieve required env variables
+// --- Environment Variables ---
 const email = process.env.STAGING_TEST_USER_EMAIL;
 const password = process.env.STAGING_TEST_USER_PASSWORD;
 const authKey = process.env.STAGING_TEST_USER_MFA_KEY;
 const baseUrl = process.env.STAGING_BASE_URL;
 
-// If secrets or base URL are missing, skip the spec to avoid failing CI on PRs without secrets
+// Skip test if env missing
 const envMissing = !email || !password || !authKey || !baseUrl;
-test.skip(envMissing, 'Login E2E env not configured; skipping spec');
+test.skip(envMissing, "Login E2E env not configured; skipping spec");
 
-// Narrow types after skip to satisfy TypeScript
-const requireEnv = (value: string | undefined, name: string) => {
+// --- Helper to require env variables ---
+const requireEnv = (value: string | undefined, name: string): string => {
   if (!value) throw new Error(`${name} is not defined`);
   return value;
 };
 
-const loginEmail = requireEnv(email, 'STAGING_TEST_USER_EMAIL');
-const loginPassword = requireEnv(password, 'STAGING_TEST_USER_PASSWORD');
-const loginAuthKey = requireEnv(authKey, 'STAGING_TEST_USER_MFA_KEY');
-const playwriteBaseUrl = requireEnv(baseUrl, 'STAGING_BASE_URL');
+const loginEmail: string = requireEnv(email, "STAGING_TEST_USER_EMAIL");
+const loginPassword: string = requireEnv(
+  password,
+  "STAGING_TEST_USER_PASSWORD",
+);
+const loginAuthKey: string = requireEnv(authKey, "STAGING_TEST_USER_MFA_KEY");
+const playwriteBaseUrl: string = requireEnv(baseUrl, "STAGING_BASE_URL");
 
-test('Login.gov authentication with MFA', async ({ page }: { page: Page }) => {
-  // Navigate to staging site
-  await page.goto(playwriteBaseUrl);
-  await page.waitForLoadState('networkidle');
-  
-  // Take screenshot to see current state
-  const step1Path = test.info().outputPath('step1-homepage.png');
+// --- Timeouts ---
+const TIMEOUT_HOME = 60000;
+const TIMEOUT_MFA = 120000;
+const TIMEOUT_REDIRECT = 90000;
+
+// --- Test ---
+test("Login.gov authentication with MFA (PR CI)", async ({
+  page,
+  context,
+}: {
+  page: Page;
+  context: BrowserContext;
+}) => {
+  // Optional tracing for CI debugging
+  await context.tracing.start({ screenshots: true, snapshots: true });
+
+  // --- Step 1: Navigate to staging ---
+  await page.goto(playwriteBaseUrl, { waitUntil: "domcontentloaded" });
+  const step1Path = test.info().outputPath("step1-homepage.png");
   await page.screenshot({ path: step1Path, fullPage: true });
-  await test.info().attach('step1-homepage', { path: step1Path, contentType: 'image/png' });
+  await test
+    .info()
+    .attach("step1-homepage", { path: step1Path, contentType: "image/png" });
 
-  // Click "Sign In" - try multiple selectors
-  let signInButton = page.locator('button:has-text("Sign In")').first();
-  let isVisible = await signInButton.isVisible({ timeout: 5000 }).catch(() => false);
-  
+  // --- Step 2: Click Sign In ---
+  let signInButton: Locator = page
+    .locator('button:has-text("Sign In")')
+    .filter({ visible: true })
+    .first();
+  let isVisible = await signInButton.isVisible().catch(() => false);
+
   if (!isVisible) {
-    signInButton = page.locator('a:has-text("Sign In")').first();
-    isVisible = await signInButton.isVisible({ timeout: 5000 }).catch(() => false);
+    signInButton = page
+      .locator('a:has-text("Sign In")')
+      .filter({ visible: true })
+      .first();
+    isVisible = await signInButton.isVisible().catch(() => false);
   }
-  
+
   if (!isVisible) {
-    const debugNoSignInPath = test.info().outputPath('step1-debug-no-signin.png');
+    const debugNoSignInPath = test
+      .info()
+      .outputPath("step1-debug-no-signin.png");
     await page.screenshot({ path: debugNoSignInPath, fullPage: true });
-    await test.info().attach('step1-debug-no-signin', { path: debugNoSignInPath, contentType: 'image/png' });
-    throw new Error('Could not find Sign In button or link');
+    await test.info().attach("step1-debug-no-signin", {
+      path: debugNoSignInPath,
+      contentType: "image/png",
+    });
+    throw new Error("Could not find Sign In button or link");
   }
-  
-  await signInButton.click();
-  // Wait for navigation - could go to Login.gov or a login page
-  await page.waitForLoadState('networkidle');
-  const step2Path = test.info().outputPath('step2-after-signin-click.png');
-  await page.screenshot({ path: step2Path, fullPage: true });
-  await test.info().attach('step2-after-signin-click', { path: step2Path, contentType: 'image/png' });
 
-  // Wait for Login.gov form to appear and fill it
-  await page.waitForSelector('input[name="user[email]"]', { state: 'visible', timeout: 15000 });
+  await signInButton.click();
+
+  // --- Step 3: Fill login form ---
+  await page.waitForSelector('input[name="user[email]"]', {
+    state: "visible",
+    timeout: TIMEOUT_HOME,
+  });
   await page.fill('input[name="user[email]"]', loginEmail);
   await page.fill('input[name="user[password]"]', loginPassword);
-  const submitButton = page.locator('button[type="submit"]').first();
+
+  const submitButton: Locator = page
+    .locator('button[type="submit"]')
+    .filter({ visible: true })
+    .first();
   await submitButton.click();
 
-  // Wait for MFA input
-  await page.waitForSelector('input[autocomplete="one-time-code"]', { state: 'visible', timeout: 15000 });
-  const step3Path = test.info().outputPath('step3-mfa-prompt.png');
-  await page.screenshot({ path: step3Path, fullPage: true });
-  await test.info().attach('step3-mfa-prompt', { path: step3Path, contentType: 'image/png' });
+  // --- Step 4: Wait for MFA input ---
+  await page.waitForLoadState("networkidle");
+  await page.waitForTimeout(3000);
 
-  // Generate MFA code and submit
-  const oneTimeCode = authenticator.generate(loginAuthKey);
-  await page.fill('input[autocomplete="one-time-code"]', oneTimeCode);
-  // Find and click the submit button (not cancel) - look for button with "submit" or "verify" text
-  const mfaSubmitButton = page
+  const preMfaScreenshot = test.info().outputPath("before-mfa.png");
+  await page.screenshot({ path: preMfaScreenshot, fullPage: true });
+  await test
+    .info()
+    .attach("before-mfa", { path: preMfaScreenshot, contentType: "image/png" });
+
+  // --- Step 5: Locate MFA input with retries ---
+  let mfaInput: Locator | undefined;
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    await test.step(`MFA retry attempt ${attempt}`, async () => {
+      try {
+        let inputCandidate: Locator = page.locator(
+          'input[autocomplete="one-time-code"]',
+        );
+        if (!(await inputCandidate.isVisible().catch(() => false))) {
+          // Check frames if input is inside iframe
+          for (const frame of page.frames()) {
+            const frameInput = frame.locator(
+              'input[autocomplete="one-time-code"]',
+            );
+            if (await frameInput.isVisible().catch(() => false)) {
+              inputCandidate = frameInput;
+              break;
+            }
+          }
+        }
+
+        await inputCandidate.waitFor({
+          state: "visible",
+          timeout: TIMEOUT_MFA,
+        });
+        mfaInput = inputCandidate;
+      } catch (err) {
+        if (page.isClosed()) throw err;
+        await page.waitForTimeout(3000);
+        if (attempt === 3) throw err;
+      }
+    });
+  }
+
+  if (!mfaInput) throw new Error("MFA input field was not found");
+
+  const step3Path = test.info().outputPath("step3-mfa-prompt.png");
+  await page.screenshot({ path: step3Path, fullPage: true });
+  await test
+    .info()
+    .attach("step3-mfa-prompt", { path: step3Path, contentType: "image/png" });
+
+  // --- Step 6: Generate OTP and submit ---
+  const oneTimeCode: string = authenticator.generate(loginAuthKey);
+  await mfaInput.fill(oneTimeCode);
+
+  const mfaSubmitButton: Locator = page
     .locator('button[type="submit"]:not(:has-text("Cancel"))')
+    .filter({ visible: true })
     .first();
   await mfaSubmitButton.click();
 
-  // Wait for redirect back to app and verify successful login
-  // Using waitForURL with pattern match since exact URL might have query params
-  // Login.gov OAuth flow can take time, so we allow up to 45 seconds
+  // --- Step 7: Confirm login success ---
   try {
-    await page.waitForSelector(
-  'text=Account',
-  { timeout: 45000 }
-);
+    const accountElement: Locator = page
+      .locator("text=Account")
+      .filter({ visible: true })
+      .first();
+    await accountElement.waitFor({
+      state: "visible",
+      timeout: TIMEOUT_REDIRECT,
+    });
   } catch (error) {
-    // If redirect fails, take a screenshot to debug
-    const debugPath = test.info().outputPath('step4-redirect-failed.png');
+    const debugPath = test.info().outputPath("step4-redirect-failed.png");
     await page.screenshot({ path: debugPath, fullPage: true });
-    await test
-      .info()
-      .attach('step4-redirect-failed', {
-        path: debugPath,
-        contentType: 'image/png',
-      });
+    await test.info().attach("step4-redirect-failed", {
+      path: debugPath,
+      contentType: "image/png",
+    });
     throw error;
   }
-  const step4Path = test.info().outputPath('step4-login-success.png');
+
+  // --- Step 8: Final success screenshot ---
+  const step4Path = test.info().outputPath("step4-login-success.png");
   await page.screenshot({ path: step4Path, fullPage: true });
-  await test
-    .info()
-    .attach('step4-login-success', {
-      path: step4Path,
-      contentType: 'image/png',
-    });
+  await test.info().attach("step4-login-success", {
+    path: step4Path,
+    contentType: "image/png",
+  });
+
+  // --- Step 9: Stop tracing ---
+  await context.tracing.stop({ path: test.info().outputPath("trace.zip") });
 });
