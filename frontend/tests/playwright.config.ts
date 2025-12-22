@@ -4,6 +4,14 @@ import dotenv from "dotenv";
 
 dotenv.config({ path: path.resolve(__dirname, "..", ".env.local") });
 
+const webServerEnv: Record<string, string> = Object.fromEntries(
+  Object.entries({
+    ...process.env,
+
+    // Explicitly disable New Relic for E2E
+    NEW_RELIC_ENABLED: "false",
+  }).filter(([, value]) => typeof value === "string")
+);
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
@@ -78,5 +86,6 @@ export default defineConfig({
         command: "npm run start",
         url: "http://127.0.0.1:3000",
         reuseExistingServer: !process.env.CI,
+        env: webServerEnv,
       },
 });
