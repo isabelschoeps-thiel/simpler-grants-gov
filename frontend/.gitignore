@@ -56,6 +56,8 @@ npm-debug.log*
 screenshots-output/*
 pa11y_output.txt
 
-# BDD cucumber features and steps (stashed for future use)
-/tests/e2e/login/features/
+# BDD cucumber steps (stashed for future use)
+/tests/e2e/login/steps/
+
+# BDD cucumber step definitions (stashed for future use)
 /tests/e2e/login/steps/
