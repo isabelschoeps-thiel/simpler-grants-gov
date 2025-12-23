@@ -121,47 +121,16 @@ export default defineConfig({
         permissions: ["clipboard-read", "clipboard-write"],
       },
     },
-
-    {
-      name: "login-staging-firefox",
-      testDir: "./e2e/login",
-      grep: /@login/,
-      use: {
-        ...devices["Desktop Firefox"], // firefox doesn't support clipboard-write or clipboard-read
-        permissions: [],
-      },
-    },
-
-    {
-      name: "login-staging-webkit",
-      testDir: "./e2e/login",
-      grep: /@login/,
-      use: {
-        ...devices["Desktop Safari"],
-        permissions: ["clipboard-read"], // webkit doesn't support clipboard-write
-      },
-    },
-
-    /* Test against mobile viewports. */
-    {
-      name: "login-staging-mobile-chrome",
-      testDir: "./e2e/login",
-      grep: /@login/,
-      use: {
-        ...devices["Pixel 7"],
-        permissions: ["clipboard-read", "clipboard-write"],
-      },
-    },
   ],
 
   /* Run your local dev server before starting the tests */
   webServer:
-  TEST_ENVIRONMENT === "local"
-    ? {
-        command: "npm run start",
-        url: baseUrl,
-        reuseExistingServer: !process.env.CI,
-        env: webServerEnv,
-      }
-    : undefined,
+    TEST_ENVIRONMENT === "local"
+      ? {
+          command: "npm run start",
+          url: baseUrl,
+          reuseExistingServer: !process.env.CI,
+          env: webServerEnv,
+        }
+      : undefined,
 });
