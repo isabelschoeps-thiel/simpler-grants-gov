@@ -46,12 +46,14 @@ Given('I navigate to the Simpler Grants staging site', async function (this: Cus
 });
 
 Given('the user is logged in', async function (this: CustomWorld) {
-  const email = process.env.LOGIN_EMAIL;
-  const password = process.env.LOGIN_PASSWORD;
-  const mfaKey = process.env.LOGIN_MFA_KEY;
+
+  // Use STAGING_ env vars for CI compatibility
+  const email = process.env.STAGING_TEST_USER_EMAIL;
+  const password = process.env.STAGING_TEST_USER_PASSWORD;
+  const mfaKey = process.env.STAGING_TEST_USER_MFA_KEY;
 
   if (!email || !password || !mfaKey) {
-    throw new Error('Missing required environment variables in .env.local');
+    throw new Error('Missing required STAGING_ environment variables in .env.local or CI');
   }
 
   // --- Click "Sign In" on staging site ---

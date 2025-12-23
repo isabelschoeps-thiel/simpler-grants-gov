@@ -4,14 +4,41 @@ import dotenv from "dotenv";
 
 dotenv.config({ path: path.resolve(__dirname, "..", ".env.local") });
 
+// Determine environment
+const TEST_ENVIRONMENT = process.env.TEST_ENVIRONMENT || "local";
+
+// Base URL selection
+const getEnv = (name: string): string => {
+  const value = process.env[name];
+  if (!value) throw new Error(`${name} is not defined`);
+  return value;
+};
+
+let baseUrl: string;
+switch (TEST_ENVIRONMENT) {
+  case "staging":
+    baseUrl = getEnv("STAGING_BASE_URL");
+    break;
+  case "training":
+    baseUrl = getEnv("TRAINING_BASE_URL");
+    break;
+  case "production":
+    baseUrl = getEnv("PRODUCTION_BASE_URL");
+    break;
+  case "local":
+  default:
+    baseUrl = process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:3000";
+}
+
 const webServerEnv: Record<string, string> = Object.fromEntries(
   Object.entries({
     ...process.env,
 
     // Explicitly disable New Relic for E2E
     NEW_RELIC_ENABLED: "false",
-  }).filter(([, value]) => typeof value === "string")
+  }).filter(([, value]) => typeof value === "string"),
 );
+
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
@@ -30,7 +57,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:3000",
+    baseURL: baseUrl,
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: "on-first-retry",
