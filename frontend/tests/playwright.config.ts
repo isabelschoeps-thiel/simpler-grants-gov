@@ -14,21 +14,8 @@ const getEnv = (name: string): string => {
   return value;
 };
 
-let baseUrl: string;
-switch (TEST_ENVIRONMENT) {
-  case "staging":
-    baseUrl = getEnv("STAGING_BASE_URL");
-    break;
-  case "training":
-    baseUrl = getEnv("TRAINING_BASE_URL");
-    break;
-  case "production":
-    baseUrl = getEnv("PRODUCTION_BASE_URL");
-    break;
-  case "local":
-  default:
-    baseUrl = process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:3000";
-}
+const localBaseUrl = getEnv("LOCAL_BASE_URL");
+const stagingBaseUrl = getEnv("STAGING_BASE_URL");
 
 const webServerEnv: Record<string, string> = Object.fromEntries(
   Object.entries({
@@ -56,10 +43,7 @@ export default defineConfig({
   reporter: process.env.CI ? "blob" : "html",
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
-    /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: baseUrl,
-
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
+     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: "on-first-retry",
     screenshot: "on",
     video: "on-first-retry",
@@ -79,6 +63,7 @@ export default defineConfig({
       testIgnore: "login/**",
       use: {
         ...devices["Desktop Chrome"],
+        baseURL: localBaseUrl,
         permissions: ["clipboard-read", "clipboard-write"],
       },
     },
@@ -90,6 +75,7 @@ export default defineConfig({
       testIgnore: "login/**",
       use: {
         ...devices["Desktop Firefox"], // firefox doesn't support clipboard-write or clipboard-read
+        baseURL: localBaseUrl,
         permissions: [],
       },
     },
@@ -101,6 +87,7 @@ export default defineConfig({
       testIgnore: "login/**",
       use: {
         ...devices["Desktop Safari"],
+        baseURL: localBaseUrl,
         permissions: ["clipboard-read"], // webkit doesn't support clipboard-write
       },
     },
@@ -113,6 +100,7 @@ export default defineConfig({
       testIgnore: "login/**",
       use: {
         ...devices["Pixel 7"],
+        baseURL: localBaseUrl,
         permissions: ["clipboard-read", "clipboard-write"],
       },
     },
@@ -122,6 +110,7 @@ export default defineConfig({
       grep: /@login/,
       use: {
         ...devices["Desktop Chrome"],
+        baseURL: stagingBaseUrl,
         permissions: ["clipboard-read", "clipboard-write"],
       },
     },
@@ -132,7 +121,7 @@ export default defineConfig({
     TEST_ENVIRONMENT === "local"
       ? {
           command: "npm run start",
-          url: baseUrl,
+          url: localBaseUrl,
           reuseExistingServer: !process.env.CI,
           env: webServerEnv,
         }
