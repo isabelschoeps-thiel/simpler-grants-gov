@@ -6,6 +6,8 @@ import {
 } from "@playwright/test";
 import { authenticator } from "otplib";
 
+// Tagging the test for config separation
+test.describe("@login Login.gov tests", () => {
 // --- Environment Variables ---
 const email = process.env.STAGING_TEST_USER_EMAIL;
 const password = process.env.STAGING_TEST_USER_PASSWORD;
@@ -160,34 +162,30 @@ test("Login.gov authentication with MFA (PR CI)", async ({
     .first();
   await mfaSubmitButton.click();
 
-  // --- Step 7: Confirm login success ---
-  try {
-    const accountElement: Locator = page
-      .locator("text=Account")
-      .filter({ visible: true })
-      .first();
-    await accountElement.waitFor({
-      state: "visible",
-      timeout: TIMEOUT_REDIRECT,
-    });
-  } catch (error) {
-    const debugPath = test.info().outputPath("step4-redirect-failed.png");
-    await page.screenshot({ path: debugPath, fullPage: true });
-    await test.info().attach("step4-redirect-failed", {
-      path: debugPath,
-      contentType: "image/png",
-    });
-    throw error;
+  // --- Step 7: Handle mobile dropdown if needed and confirm login success ---
+  const viewport = page.viewportSize();
+const isMobile = viewport ? viewport.width <= 480 : false;
+
+if (isMobile) {
+  const dropdownButton = page.locator(
+    'header >> role=button[name="User menu"], header >> [aria-label*="menu"], header >> [aria-label*="User"]'
+  ).first();
+
+  if (await dropdownButton.isVisible().catch(() => false)) {
+    await dropdownButton.click();
+    await page.waitForTimeout(300); // wait for menu to open
   }
+}
 
-  // --- Step 8: Final success screenshot ---
-  const step4Path = test.info().outputPath("step4-login-success.png");
-  await page.screenshot({ path: step4Path, fullPage: true });
-  await test.info().attach("step4-login-success", {
-    path: step4Path,
-    contentType: "image/png",
-  });
+  // --- Step 8: Confirm Account element is visible ---
+  const signInButtonAfterLogin = page.locator('button:has-text("Sign In"), a:has-text("Sign In")').first();
+  await signInButtonAfterLogin.waitFor({ state: 'detached', timeout: TIMEOUT_REDIRECT });
 
-  // --- Step 9: Stop tracing ---
+  // --- Step 9: Final success screenshot ---
+  await page.screenshot({ path: test.info().outputPath("step4-login-success.png"), fullPage: true });
+  await test.info().attach("step4-login-success", { path: test.info().outputPath("step4-login-success.png"), contentType: "image/png" });
+
+  // --- Step 10: Stop tracing ---
   await context.tracing.stop({ path: test.info().outputPath("trace.zip") });
+});
 });

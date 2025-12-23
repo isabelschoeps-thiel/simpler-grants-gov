@@ -73,7 +73,9 @@ export default defineConfig({
   /* Configure projects for major browsers */
   projects: [
     {
-      name: "chromium",
+      name: "local-e2e-chromium",
+      testDir: "./e2e",
+      grepInvert: /@login/,
       use: {
         ...devices["Desktop Chrome"],
         permissions: ["clipboard-read", "clipboard-write"],
@@ -81,7 +83,9 @@ export default defineConfig({
     },
 
     {
-      name: "firefox",
+      name: "local-e2e-firefox",
+      testDir: "./e2e",
+      grepInvert: /@login/,
       use: {
         ...devices["Desktop Firefox"], // firefox doesn't support clipboard-write or clipboard-read
         permissions: [],
@@ -89,7 +93,9 @@ export default defineConfig({
     },
 
     {
-      name: "webkit",
+      name: "local-e2e-webkit",
+      testDir: "./e2e",
+      grepInvert: /@login/,
       use: {
         ...devices["Desktop Safari"],
         permissions: ["clipboard-read"], // webkit doesn't support clipboard-write
@@ -98,7 +104,49 @@ export default defineConfig({
 
     /* Test against mobile viewports. */
     {
-      name: "Mobile Chrome",
+      name: "local-e2e-mobile-chrome",
+      testDir: "./e2e",
+      grepInvert: /@login/,
+      use: {
+        ...devices["Pixel 7"],
+        permissions: ["clipboard-read", "clipboard-write"],
+      },
+    },
+    {
+      name: "login-staging-chromium",
+      testDir: "./e2e/login",
+      grep: /@login/,
+      use: {
+        ...devices["Desktop Chrome"],
+        permissions: ["clipboard-read", "clipboard-write"],
+      },
+    },
+
+    {
+      name: "login-staging-firefox",
+      testDir: "./e2e/login",
+      grep: /@login/,
+      use: {
+        ...devices["Desktop Firefox"], // firefox doesn't support clipboard-write or clipboard-read
+        permissions: [],
+      },
+    },
+
+    {
+      name: "login-staging-webkit",
+      testDir: "./e2e/login",
+      grep: /@login/,
+      use: {
+        ...devices["Desktop Safari"],
+        permissions: ["clipboard-read"], // webkit doesn't support clipboard-write
+      },
+    },
+
+    /* Test against mobile viewports. */
+    {
+      name: "login-staging-mobile-chrome",
+      testDir: "./e2e/login",
+      grep: /@login/,
       use: {
         ...devices["Pixel 7"],
         permissions: ["clipboard-read", "clipboard-write"],
@@ -107,12 +155,13 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: process.env.PLAYWRIGHT_BASE_URL
-    ? undefined
-    : {
+  webServer:
+  TEST_ENVIRONMENT === "local"
+    ? {
         command: "npm run start",
-        url: "http://127.0.0.1:3000",
+        url: baseUrl,
         reuseExistingServer: !process.env.CI,
         env: webServerEnv,
-      },
+      }
+    : undefined,
 });
