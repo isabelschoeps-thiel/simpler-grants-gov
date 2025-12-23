@@ -76,6 +76,7 @@ export default defineConfig({
       name: "local-e2e-chromium",
       testDir: "./e2e",
       grepInvert: /@login/,
+      testIgnore: "**/login/login_with_login_gov.spec.ts",
       use: {
         ...devices["Desktop Chrome"],
         permissions: ["clipboard-read", "clipboard-write"],
@@ -86,6 +87,7 @@ export default defineConfig({
       name: "local-e2e-firefox",
       testDir: "./e2e",
       grepInvert: /@login/,
+      testIgnore: "**/login/login_with_login_gov.spec.ts",
       use: {
         ...devices["Desktop Firefox"], // firefox doesn't support clipboard-write or clipboard-read
         permissions: [],
@@ -96,6 +98,7 @@ export default defineConfig({
       name: "local-e2e-webkit",
       testDir: "./e2e",
       grepInvert: /@login/,
+      testIgnore: "**/login/login_with_login_gov.spec.ts",
       use: {
         ...devices["Desktop Safari"],
         permissions: ["clipboard-read"], // webkit doesn't support clipboard-write
@@ -107,6 +110,7 @@ export default defineConfig({
       name: "local-e2e-mobile-chrome",
       testDir: "./e2e",
       grepInvert: /@login/,
+      testIgnore: "**/login/login_with_login_gov.spec.ts",
       use: {
         ...devices["Pixel 7"],
         permissions: ["clipboard-read", "clipboard-write"],
