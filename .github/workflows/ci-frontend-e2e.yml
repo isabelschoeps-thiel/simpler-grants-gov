@@ -207,4 +207,4 @@ jobs:
         with:
           name: merged-html-report
           path: frontend/playwright-report
-          retention-days: 30
+          retention-days: 29
