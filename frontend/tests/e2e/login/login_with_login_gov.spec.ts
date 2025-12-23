@@ -25,14 +25,6 @@ test.describe("@login Login.gov tests", () => {
     return value;
   };
 
-  const loginEmail: string = requireEnv(email, "STAGING_TEST_USER_EMAIL");
-  const loginPassword: string = requireEnv(
-    password,
-    "STAGING_TEST_USER_PASSWORD",
-  );
-  const loginAuthKey: string = requireEnv(authKey, "STAGING_TEST_USER_MFA_KEY");
-  const playwriteBaseUrl: string = requireEnv(baseUrl, "STAGING_BASE_URL");
-
   // --- Timeouts ---
   const TIMEOUT_HOME = 60000;
   const TIMEOUT_MFA = 120000;
@@ -46,6 +38,17 @@ test.describe("@login Login.gov tests", () => {
     page: Page;
     context: BrowserContext;
   }) => {
+    // Validate and load envs inside the test so we don't throw at import time
+    const loginEmail: string = requireEnv(email, "STAGING_TEST_USER_EMAIL");
+    const loginPassword: string = requireEnv(
+      password,
+      "STAGING_TEST_USER_PASSWORD",
+    );
+    const loginAuthKey: string = requireEnv(
+      authKey,
+      "STAGING_TEST_USER_MFA_KEY",
+    );
+    const playwriteBaseUrl: string = requireEnv(baseUrl, "STAGING_BASE_URL");
     // Optional tracing for CI debugging
     await context.tracing.start({ screenshots: true, snapshots: true });
 
