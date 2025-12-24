@@ -5,10 +5,10 @@ import dotenv from "dotenv";
 // Load environment variables
 dotenv.config({ path: path.resolve(__dirname, "..", ".env.local") });
 
-// Determine environment
-const TEST_ENVIRONMENT = process.env.TEST_ENVIRONMENT || "local";
+// Determine environment: can be overridden via PLAYWRIGHT_TARGET_ENV
+const ENV = process.env.PLAYWRIGHT_TARGET_ENV || "local";
 
-// Helper to read env variables
+// Helper to get required environment variables
 const getEnv = (name: string, required = true): string | undefined => {
   const value = process.env[name];
   if (required && !value) throw new Error(`${name} is not defined`);
@@ -16,14 +16,15 @@ const getEnv = (name: string, required = true): string | undefined => {
 };
 
 // Base URLs
-const localBaseUrl =
-  process.env.TEST_ENVIRONMENT !== "staging"
-    ? getEnv("LOCAL_BASE_URL", false) || "http://127.0.0.1:3000"
-    : undefined;
+const localBaseUrl = getEnv("LOCAL_BASE_URL", false) || "http://127.0.0.1:3000";
+const stagingBaseUrl = getEnv("STAGING_BASE_URL", ENV === "staging");
 
-const stagingBaseUrl = getEnv("STAGING_BASE_URL", true);
+// Use PLAYWRIGHT_BASE_URL or fallback based on environment
+const baseUrl =
+  process.env.PLAYWRIGHT_BASE_URL ||
+  (ENV === "staging" ? stagingBaseUrl : localBaseUrl);
 
-// Environment variables for local web server
+// Environment for web server
 const webServerEnv: Record<string, string> = Object.fromEntries(
   Object.entries({
     ...process.env,
@@ -31,9 +32,6 @@ const webServerEnv: Record<string, string> = Object.fromEntries(
   }).filter(([, value]) => typeof value === "string"),
 );
 
-/**
- * Playwright configuration
- */
 export default defineConfig({
   timeout: 75000,
   testDir: "./e2e",
@@ -43,6 +41,7 @@ export default defineConfig({
   workers: 10,
   reporter: process.env.CI ? "blob" : "html",
   use: {
+    baseURL: baseUrl,
     trace: "on-first-retry",
     screenshot: "on",
     video: "on-first-retry",
@@ -52,7 +51,7 @@ export default defineConfig({
     current: parseInt(process.env.CURRENT_SHARD || "1"),
   },
   projects: [
-    // Desktop Chrome for local tests (exclude login)
+    // Local Desktop Chrome (exclude login)
     {
       name: "local-e2e-chromium",
       testDir: "./e2e",
@@ -60,12 +59,9 @@ export default defineConfig({
       testIgnore: "login/**",
       use: {
         ...devices["Desktop Chrome"],
-        baseURL: localBaseUrl,
         permissions: ["clipboard-read", "clipboard-write"],
       },
     },
-
-    // Desktop Firefox
     {
       name: "local-e2e-firefox",
       testDir: "./e2e",
@@ -73,12 +69,9 @@ export default defineConfig({
       testIgnore: "login/**",
       use: {
         ...devices["Desktop Firefox"],
-        baseURL: localBaseUrl,
         permissions: [],
       },
     },
-
-    // Desktop Safari
     {
       name: "local-e2e-webkit",
       testDir: "./e2e",
@@ -86,12 +79,9 @@ export default defineConfig({
       testIgnore: "login/**",
       use: {
         ...devices["Desktop Safari"],
-        baseURL: localBaseUrl,
         permissions: ["clipboard-read"],
       },
     },
-
-    // Mobile Chrome
     {
       name: "local-e2e-mobile-chrome",
       testDir: "./e2e",
@@ -99,30 +89,29 @@ export default defineConfig({
       testIgnore: "login/**",
       use: {
         ...devices["Pixel 7"],
-        baseURL: localBaseUrl,
         permissions: ["clipboard-read", "clipboard-write"],
       },
     },
 
-    // Login tests on staging
+    // Staging login tests
     {
       name: "login-staging-chromium",
       testDir: "./e2e/login",
       grep: /@login/,
       use: {
         ...devices["Desktop Chrome"],
-        baseURL: stagingBaseUrl,
+        baseURL: baseUrl, // this will be stagingBaseUrl if ENV=staging
         permissions: ["clipboard-read", "clipboard-write"],
       },
     },
   ],
 
-  // Run local dev server only if environment is local
+  // Start local dev server only for local environment
   webServer:
-    TEST_ENVIRONMENT === "local"
+    ENV === "local"
       ? {
           command: "npm run start",
-          url: localBaseUrl,
+          url: baseUrl,
           reuseExistingServer: !process.env.CI,
           env: webServerEnv,
         }
