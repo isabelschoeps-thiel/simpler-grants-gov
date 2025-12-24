@@ -84,6 +84,8 @@ jobs:
           CI: true
           TOTAL_SHARDS: ${{ matrix.total_shards }}
           CURRENT_SHARD: ${{ matrix.shard }}
+          LOCAL_BASE_URL: http://127.0.0.1:3000
+          STAGING_BASE_URL: https://staging.simpler.grants.gov
         run: |
           npx playwright test ./e2e --shard="${CURRENT_SHARD}/${TOTAL_SHARDS}"
 
@@ -127,7 +129,8 @@ jobs:
 
     env:
       PLAYWRIGHT_TARGET_ENV: staging
-      PLAYWRIGHT_BASE_URL: ${{ secrets.STAGING_BASE_URL }}
+      STAGING_BASE_URL: ${{ secrets.STAGING_BASE_URL }}
+      LOCAL_BASE_URL: http://127.0.0.1:3000
       STAGING_TEST_USER_EMAIL: ${{ secrets.STAGING_TEST_USER_EMAIL }}
       STAGING_TEST_USER_PASSWORD: ${{ secrets.STAGING_TEST_USER_PASSWORD }}
       STAGING_TEST_USER_MFA_KEY: ${{ secrets.STAGING_TEST_USER_MFA_KEY }}
@@ -150,8 +153,10 @@ jobs:
       - name: Run Staging Login Tests
         env:
           CI: true
+          STAGING_BASE_URL: ${{ secrets.STAGING_BASE_URL }}
+          LOCAL_BASE_URL: http://127.0.0.1:3000
         run: |
-          npx playwright test ./e2e/login --grep "@login"
+          npx playwright test --project=login-staging-chromium
 
       - name: Verify Blob Report Directory
         if: always()
