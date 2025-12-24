@@ -8,16 +8,15 @@ dotenv.config({ path: path.resolve(__dirname, "..", ".env.local") });
 // Determine environment: can be overridden via PLAYWRIGHT_TARGET_ENV
 const ENV = process.env.PLAYWRIGHT_TARGET_ENV || "local";
 
-// Helper to get required environment variables
-const getEnv = (name: string, required = true): string | undefined => {
-  const value = process.env[name];
-  if (required && !value) throw new Error(`${name} is not defined`);
-  return value;
+// Helper to get environment variables
+const getEnv = (name: string): string | undefined => {
+  return process.env[name];
 };
 
-// Base URLs
-const localBaseUrl = getEnv("LOCAL_BASE_URL", false) || "http://127.0.0.1:3000";
-const stagingBaseUrl = getEnv("STAGING_BASE_URL", ENV === "staging");
+// Base URLs with defaults
+const localBaseUrl = getEnv("LOCAL_BASE_URL") || "http://127.0.0.1:3000";
+const stagingBaseUrl =
+  getEnv("STAGING_BASE_URL") || "https://staging.simpler.grants.gov";
 
 // Use PLAYWRIGHT_BASE_URL or fallback based on environment
 const baseUrl =
@@ -59,6 +58,7 @@ export default defineConfig({
       testIgnore: "login/**",
       use: {
         ...devices["Desktop Chrome"],
+        baseURL: localBaseUrl,
         permissions: ["clipboard-read", "clipboard-write"],
       },
     },
@@ -69,6 +69,7 @@ export default defineConfig({
       testIgnore: "login/**",
       use: {
         ...devices["Desktop Firefox"],
+        baseURL: localBaseUrl,
         permissions: [],
       },
     },
@@ -79,6 +80,7 @@ export default defineConfig({
       testIgnore: "login/**",
       use: {
         ...devices["Desktop Safari"],
+        baseURL: localBaseUrl,
         permissions: ["clipboard-read"],
       },
     },
@@ -89,6 +91,7 @@ export default defineConfig({
       testIgnore: "login/**",
       use: {
         ...devices["Pixel 7"],
+        baseURL: localBaseUrl,
         permissions: ["clipboard-read", "clipboard-write"],
       },
     },
@@ -100,7 +103,7 @@ export default defineConfig({
       grep: /@login/,
       use: {
         ...devices["Desktop Chrome"],
-        baseURL: baseUrl, // this will be stagingBaseUrl if ENV=staging
+        baseURL: stagingBaseUrl,
         permissions: ["clipboard-read", "clipboard-write"],
       },
     },

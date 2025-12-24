@@ -1,4 +1,5 @@
 name: Frontend E2E Tests
+
 on:
   workflow_dispatch:
   workflow_call:
@@ -18,9 +19,13 @@ env:
   NODE_OPTIONS: --dns-result-order=ipv4first
 
 jobs:
+  # ---------------------------
+  # Local E2E (Sharded)
+  # ---------------------------
   e2e-tests:
     name: Run Local E2E Tests
     runs-on: ubuntu-22.04
+
     env:
       PLAYWRIGHT_TARGET_ENV: local
       PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
@@ -41,32 +46,36 @@ jobs:
           cache: ${{ env.PACKAGE_MANAGER }}
           cache-dependency-path: ${{ env.LOCKFILE_PATH }}
 
-      - run: |
+      - name: Install dependencies & Playwright
+        run: |
           npm ci
           npx playwright install --with-deps
-          docker rmi node:22 node:20 node:18
+          docker rmi node:22 node:20 node:18 || true
 
-      - name: Start API Server for e2e tests
+      - name: Start API Server for E2E
         run: |
           cd ../api
           ulimit -c unlimited
           mkdir -p /tmp/cores
           echo "/tmp/cores/core.%e.%p.%t" | sudo tee /proc/sys/kernel/core_pattern
+
           make init
           echo "LOGIN_FINAL_DESTINATION=http://127.0.0.1:3000/api/auth/callback" >> override.env
           make db-seed-local-with-agencies populate-search-opportunities populate-search-agencies start
+
           cd ../frontend
           chmod +x ../api/bin/wait-for-api.sh
           ../api/bin/wait-for-api.sh
         shell: bash
 
-      - name: Build prod version
+      - name: Build production site
         run: |
           {
             cat .env.development
             sed -En '/API_JWT_PUBLIC_KEY/,/-----END PUBLIC KEY-----/p' ../api/override.env
             cat ../api/e2e_token.tmp
           } >> .env.local
+
           sed -i 's|^SENDY_API_URL=.*|SENDY_API_URL=http://127.0.0.1:3000|' .env.local
           npm run build -- --no-lint
 
@@ -75,14 +84,47 @@ jobs:
           CI: true
           TOTAL_SHARDS: ${{ matrix.total_shards }}
           CURRENT_SHARD: ${{ matrix.shard }}
-          PLAYWRIGHT_TARGET_ENV: local
-          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
         run: |
-          npx playwright test ./e2e --shard $CURRENT_SHARD/$TOTAL_SHARDS
+          npx playwright test ./e2e --shard=${CURRENT_SHARD}/${TOTAL_SHARDS}
 
+      - name: Debug logging on failure
+        if: failure()
+        run: |
+          cd ../api
+          echo "=== API Container Logs ==="
+          docker logs grants-api || echo "Could not retrieve API logs"
+          echo ""
+          echo "=== OpenSearch Container Logs ==="
+          docker logs opensearch-node || echo "Could not retrieve OpenSearch logs"
+          echo ""
+          echo "=== Container Status ==="
+          docker ps -a
+          echo ""
+          echo "=== Disk free ==="
+          df -h
+        shell: bash
+
+      - name: Verify Blob Report Directory
+        if: always()
+        run: |
+          echo "Contents of blob-report directory:"
+          ls -R blob-report || echo "blob-report directory not found"
+
+      - name: Upload Blob Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: blob-report-shard-${{ matrix.shard }}
+          path: /home/runner/work/simpler-grants-gov/simpler-grants-gov/frontend/blob-report
+          retention-days: 1
+
+  # ---------------------------
+  # Staging Login E2E (Single run)
+  # ---------------------------
   e2e-login-staging:
     name: Login E2E (Staging)
     runs-on: ubuntu-22.04
+
     env:
       PLAYWRIGHT_TARGET_ENV: staging
       PLAYWRIGHT_BASE_URL: ${{ secrets.STAGING_BASE_URL }}
@@ -100,13 +142,67 @@ jobs:
           cache: ${{ env.PACKAGE_MANAGER }}
           cache-dependency-path: ${{ env.LOCKFILE_PATH }}
 
-      - name: Install dependencies and Playwright
+      - name: Install dependencies & Playwright
         run: |
           npm ci
           npx playwright install --with-deps
 
-      - name: Run Staging Login Specs
+      - name: Run Staging Login Tests
         env:
           CI: true
         run: |
-          npx playwright test ./e2e/login --grep "@login" --shard $CURRENT_SHARD/$TOTAL_SHARDS
+          npx playwright test ./e2e/login --grep "@login"
+
+      - name: Verify Blob Report Directory
+        if: always()
+        run: |
+          echo "Contents of blob-report directory:"
+          ls -R blob-report || echo "blob-report directory not found"
+
+      - name: Upload Blob Report (login)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: blob-report-login
+          path: /home/runner/work/simpler-grants-gov/simpler-grants-gov/frontend/blob-report
+          retention-days: 7
+
+  # ---------------------------
+  # Merge Reports (Local only)
+  # ---------------------------
+  create-report:
+    name: Create Merged Test Report
+    if: ${{ !cancelled() }}
+    needs: [e2e-tests]
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: ${{ env.PACKAGE_MANAGER }}
+          cache-dependency-path: ${{ env.LOCKFILE_PATH }}
+
+      - run: |
+          npm ci
+          npx playwright install --with-deps
+
+      - name: Download All Blob Reports
+        uses: actions/download-artifact@v4
+        with:
+          path: frontend/all-blob-reports
+          pattern: blob-report-shard-*
+          merge-multiple: true
+
+      - name: Merge Blob Reports into HTML
+        run: npx playwright merge-reports --reporter html ./all-blob-reports
+
+      - name: Upload Merged HTML Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: merged-html-report
+          path: frontend/playwright-report
+          retention-days: 30
