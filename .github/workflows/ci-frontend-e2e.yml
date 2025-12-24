@@ -28,7 +28,8 @@ jobs:
 
     env:
       PLAYWRIGHT_TARGET_ENV: local
-      PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+      LOCAL_BASE_URL: http://127.0.0.1:3000
+      STAGING_BASE_URL: https://staging.simpler.grants.gov
 
     strategy:
       fail-fast: true
@@ -84,10 +85,8 @@ jobs:
           CI: true
           TOTAL_SHARDS: ${{ matrix.total_shards }}
           CURRENT_SHARD: ${{ matrix.shard }}
-          LOCAL_BASE_URL: http://127.0.0.1:3000
-          STAGING_BASE_URL: https://staging.simpler.grants.gov
         run: |
-          npx playwright test ./e2e --shard="${CURRENT_SHARD}/${TOTAL_SHARDS}"
+          npx playwright test --config=tests/playwright.config.ts ./e2e --shard="${CURRENT_SHARD}/${TOTAL_SHARDS}"
 
       - name: Debug logging on failure
         if: failure()
@@ -153,10 +152,8 @@ jobs:
       - name: Run Staging Login Tests
         env:
           CI: true
-          STAGING_BASE_URL: ${{ secrets.STAGING_BASE_URL }}
-          LOCAL_BASE_URL: http://127.0.0.1:3000
         run: |
-          npx playwright test --project=login-staging-chromium
+          npx playwright test --config=tests/playwright.config.ts --project=login-staging-chromium
 
       - name: Verify Blob Report Directory
         if: always()

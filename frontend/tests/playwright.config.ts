@@ -1,9 +1,13 @@
 import path from "path";
 import { defineConfig, devices } from "@playwright/test";
 import dotenv from "dotenv";
+import fs from "fs";
 
-// Load environment variables
-dotenv.config({ path: path.resolve(__dirname, "..", ".env.local") });
+// Load environment variables from .env.local if it exists
+const envPath = path.resolve(__dirname, "..", ".env.local");
+if (fs.existsSync(envPath)) {
+  dotenv.config({ path: envPath });
+}
 
 // Determine environment: can be overridden via PLAYWRIGHT_TARGET_ENV
 const ENV = process.env.PLAYWRIGHT_TARGET_ENV || "local";
