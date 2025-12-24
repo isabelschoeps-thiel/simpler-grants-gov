@@ -1,7 +1,7 @@
+import fs from "fs";
 import path from "path";
 import { defineConfig, devices } from "@playwright/test";
 import dotenv from "dotenv";
-import fs from "fs";
 
 // Load environment variables from .env.local if it exists
 const envPath = path.resolve(__dirname, "..", ".env.local");
